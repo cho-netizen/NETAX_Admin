@@ -38,8 +38,10 @@
     
     button.approve { background: #4CAF50; color: #fff; padding: 6px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 4px; }
     button.reject { background: #f44336; color: #fff; padding: 6px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
     
     .loading { text-align: center; padding: 40px; color: #999; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: #fff; padding: 16px 24px; border-radius: 4px; z-index: 1000; }
   </style>
 </head>
 <body>
@@ -111,6 +113,8 @@
   </div>
 </div>
 
+<div id="toast-msg" class="toast" style="display: none;"></div>
+
 <script>
 const ADMIN_PASSWORD = 'netax2024';
 const SHEETS_ID = '1HMMKMd0bp7kjK7Z8oSMJy2TSXFKB0EUC1XCIjSsfrmQ';
@@ -141,7 +145,6 @@ function switchTab(index) {
 }
 
 function loadConsultingData() {
-  // Google Sheets에서 Bookings 탭 데이터 조회
   fetch(API_URL + '?action=getBookings')
     .then(response => response.json())
     .then(data => {
@@ -149,27 +152,31 @@ function loadConsultingData() {
       renderTables();
     })
     .catch(error => {
-      console.log('API 응답 오류, 샘플 데이터로 표시합니다.');
-      renderSampleData();
+      console.error('로딩 오류:', error);
+      showToast('데이터 로드 실패');
     });
 }
 
 function renderTables() {
-  const pending = allBookingData.filter(b => b.status === '신청' || !b.status);
-  const approved = allBookingData.filter(b => b.status === '확정');
+  const pending = allBookingData
+    .map((b, idx) => ({ ...b, originalIndex: idx }))
+    .filter(b => !b.status || b.status === '신청');
+  const approved = allBookingData
+    .map((b, idx) => ({ ...b, originalIndex: idx }))
+    .filter(b => b.status === '확정');
 
   // 대기 목록
   const pendingHtml = pending.length > 0 
-    ? pending.map((b, i) => `
+    ? pending.map((b) => `
       <tr>
         <td>${b.name || '-'}</td>
         <td>${b.phone || '-'}</td>
         <td>${b.type || '-'}</td>
-        <td>${b.date || '-'}</td>
+        <td>${formatDate(b.date)}</td>
         <td>${(b.situation || '').substring(0, 20)}...</td>
         <td>
-          <button class="approve" onclick="approveBooking(${i})">✓승인</button>
-          <button class="reject" onclick="rejectBooking(${i})">✕거절</button>
+          <button class="approve" onclick="approveBooking(${b.originalIndex})">✓승인</button>
+          <button class="reject" onclick="rejectBooking(${b.originalIndex})">✕거절</button>
         </td>
       </tr>
     `).join('')
@@ -183,7 +190,7 @@ function renderTables() {
       <tr>
         <td>${b.name || '-'}</td>
         <td>${b.phone || '-'}</td>
-        <td>${b.date || '-'}</td>
+        <td>${formatDate(b.date)}</td>
         <td>${b.approvedDate || '-'}</td>
         <td>${b.reservedDate || '예약 대기'}</td>
       </tr>
@@ -193,45 +200,65 @@ function renderTables() {
   document.getElementById('approved-tbody').innerHTML = approvedHtml;
 }
 
-function renderSampleData() {
-  // 임시 샘플 데이터 (API 실패 시)
-  document.getElementById('pending-tbody').innerHTML = `
-    <tr>
-      <td>홍길동</td>
-      <td>010-1234-5678</td>
-      <td>법인대표</td>
-      <td>2026-07-08</td>
-      <td>상속세 절세...</td>
-      <td>
-        <button class="approve" onclick="alert('승인 기능은 Apps Script 연동 후 작동합니다.')">✓승인</button>
-        <button class="reject" onclick="alert('거절 기능은 Apps Script 연동 후 작동합니다.')">✕거절</button>
-      </td>
-    </tr>
-  `;
-  document.getElementById('approved-tbody').innerHTML = `
-    <tr>
-      <td colspan="5" style="text-align: center; color: #999;">완료된 항목이 없습니다.</td>
-    </tr>
-  `;
-}
-
 function approveBooking(index) {
-  if (confirm('승인하시겠습니까?')) {
-    console.log('승인:', allBookingData[index]);
-    alert('승인 기능은 Apps Script와 연동 후 작동합니다.');
-  }
+  if (!confirm('승인하시겠습니까?')) return;
+
+  const booking = allBookingData[index];
+  const sheetRow = index + 2; // 1번째는 헤더, 2번째부터 데이터
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'approve',
+      rowIndex: sheetRow,
+      eventId: booking.eventId || ''
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('승인되었습니다.');
+      loadConsultingData();
+    } else {
+      showToast('승인 실패: ' + (data.error || ''));
+    }
+  })
+  .catch(error => {
+    console.error('오류:', error);
+    showToast('승인 중 오류 발생');
+  });
 }
 
 function rejectBooking(index) {
-  if (confirm('거절하시겠습니까?')) {
-    console.log('거절:', allBookingData[index]);
-    alert('거절 기능은 Apps Script와 연동 후 작동합니다.');
-  }
+  if (!confirm('거절하시겠습니까?')) return;
+
+  const sheetRow = index + 2; // 1번째는 헤더, 2번째부터 데이터
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'reject',
+      rowIndex: sheetRow
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('거절되었습니다.');
+      loadConsultingData();
+    } else {
+      showToast('거절 실패: ' + (data.error || ''));
+    }
+  })
+  .catch(error => {
+    console.error('오류:', error);
+    showToast('거절 중 오류 발생');
+  });
 }
 
 function updateStats() {
   const total = allBookingData.length;
-  const pending = allBookingData.filter(b => b.status === '신청' || !b.status).length;
+  const pending = allBookingData.filter(b => !b.status || b.status === '신청').length;
   const approved = allBookingData.filter(b => b.status === '확정').length;
 
   document.getElementById('stats-info').innerHTML = `
@@ -241,7 +268,24 @@ function updateStats() {
   `;
 }
 
-// 초기 로드 시 샘플 데이터 표시
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  if (typeof dateStr === 'number') {
+    return new Date(dateStr).toLocaleDateString('ko-KR');
+  }
+  return dateStr;
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast-msg');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 3000);
+}
+
+// 초기 로드
 loadConsultingData();
 </script>
 
