@@ -1,147 +1,387 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NETAX 관리자 대시보드</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --navy: #0D1B3D;
-      --gold: #C8A244;
-      --bg: #F8F6F2;
-      --line: #E3DFD6;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>관리자 대시보드 | NETAX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0D1B3D;
+    --navy-deep: #081226;
+    --cream: #F8F6F0;
+    --gold: #C8A244;
+    --gold-light: #DCC17E;
+    --error: #B14545;
+    --ok: #5BA968;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: hidden; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--navy-deep);
+    min-height: 100vh;
+  }
+
+  /* ---------- 로그인 화면 (기존 보고서관리 방식 그대로) ---------- */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--navy);
+    border: 1px solid rgba(176,141,87,0.25);
+    border-radius: 4px;
+    padding: 40px 32px;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold-light), var(--gold), var(--gold-light));
+    border-radius: 4px 4px 0 0;
+  }
+
+  h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--cream);
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 480px) {
+    #loginScreen { padding: 0; align-items: stretch; }
+    .card {
+      max-width: 100%;
+      min-height: 100dvh;
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 36px 20px 20px;
     }
-    body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: #333; }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-    
-    header { background: var(--navy); color: #fff; padding: 20px 0; position: sticky; top: 0; z-index: 50; }
-    header h1 { font-size: 24px; font-weight: 700; }
-    
-    .auth-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
-    .auth-screen.active { display: flex; }
-    .auth-box { background: #fff; padding: 40px; border-radius: 8px; text-align: center; }
-    .auth-box input { display: block; width: 300px; padding: 12px; margin: 10px 0; border: 1px solid var(--line); border-radius: 4px; font-size: 16px; }
-    .auth-box button { background: var(--navy); color: #fff; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: 600; }
-    
-    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--line); margin: 24px 0; }
-    .tabs button { background: none; border: none; padding: 16px 24px; font-size: 16px; font-weight: 600; color: #999; cursor: pointer; border-bottom: 3px solid transparent; transition: .2s; }
-    .tabs button.active { color: var(--navy); border-bottom-color: var(--gold); }
-    
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    table th { background: #f0f0f0; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--line); }
-    table td { padding: 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
-    table tr:hover { background: #fafafa; }
-    
-    button.approve { background: #4CAF50; color: #fff; padding: 6px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-right: 4px; }
-    button.reject { background: #f44336; color: #fff; padding: 6px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    
-    .loading { text-align: center; padding: 40px; color: #999; }
-    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: #fff; padding: 16px 24px; border-radius: 4px; z-index: 1000; }
-  </style>
+    .card::before { border-radius: 0; }
+    h1 { font-size: 19px; }
+  }
+
+  .field-row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+  input[type="password"],
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 13px 14px;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 3px;
+    color: var(--cream);
+    font-size: 15px;
+    font-family: 'Noto Sans KR', sans-serif;
+    text-align: center;
+  }
+  input::placeholder { color: rgba(246,243,236,0.55); font-size: 12px; }
+  input:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,0.06); }
+
+  button {
+    background: var(--gold);
+    color: var(--navy-deep);
+    border: none;
+    border-radius: 3px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:hover { background: var(--gold-light); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  #loginScreen button[type="submit"] { padding: 0 22px; white-space: nowrap; }
+
+  .message { margin-top: 8px; font-size: 13px; text-align: center; line-height: 1.6; }
+  .message.error { color: var(--error); }
+
+  /* ---------- 로그인 후 대시보드 ---------- */
+  #dashboard { display: none; }
+
+  .topbar {
+    background: var(--navy);
+    border-bottom: 1px solid rgba(176,141,87,0.25);
+    padding: 16px 0;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { margin: 0; text-align: left; font-size: 19px; }
+  .logout-btn { background: transparent; border: 1px solid rgba(246,243,236,0.3); color: rgba(246,243,236,0.75); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 3px; }
+  .logout-btn:hover { background: rgba(255,255,255,0.06); color: var(--cream); }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  .main-menu { display: flex; gap: 8px; margin: 28px 0 0; }
+  .main-menu button {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(176,141,87,0.2); border-bottom: none;
+    border-radius: 4px 4px 0 0; padding: 16px; font-size: 15px; font-weight: 700;
+    color: rgba(246,243,236,0.5); cursor: pointer; transition: .2s;
+  }
+  .main-menu button.active { color: var(--cream); background: var(--navy); border-bottom: 3px solid var(--gold); }
+
+  .menu-content {
+    display: none; background: var(--navy); border: 1px solid rgba(176,141,87,0.2); border-top: none;
+    padding: 28px; border-radius: 0 0 4px 4px; margin-bottom: 48px;
+  }
+  .menu-content.active { display: block; }
+
+  /* 예약관리 서브탭 */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 24px; }
+  .tabs button { background: none; border: none; border-radius: 0; padding: 12px 20px; font-size: 14px; font-weight: 600; color: rgba(246,243,236,0.5); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs button.active { color: var(--gold-light); border-bottom-color: var(--gold); background: none; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  h3 { font-family: 'Nanum Myeongjo', serif; color: var(--cream); font-size: 16px; font-weight: 700; text-align: left; margin: 0 0 4px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; }
+  table th { background: rgba(255,255,255,0.06); color: var(--gold-light); padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: var(--cream); }
+  table tr:hover td { background: rgba(255,255,255,0.03); }
+
+  button.approve { background: var(--ok); color: #06210c; padding: 6px 12px; font-size: 12px; margin-right: 4px; }
+  button.approve:hover { background: #6fc57e; }
+  button.reject { background: var(--error); color: #fff; padding: 6px 12px; font-size: 12px; }
+  button.reject:hover { background: #c95c5c; }
+
+  .loading, .empty-row { text-align: center; padding: 32px; color: rgba(246,243,236,0.45); }
+
+  .stats-box { margin: 16px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 4px; color: var(--cream); font-size: 14px; line-height: 1.8; }
+  .stats-box strong { color: var(--gold-light); }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); border: 1px solid var(--gold); color: var(--cream); padding: 16px 24px; border-radius: 4px; z-index: 1000; }
+
+  /* 보고서관리 (기존 화면 그대로) */
+  .search-box { margin-bottom: 16px; }
+  .customer-list { max-height: none; }
+
+  .customer-item {
+    display: block;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .customer-item:hover { background: rgba(255,255,255,0.11); border-color: var(--gold); }
+
+  .customer-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .customer-name { color: var(--cream); font-size: 16px; font-weight: 600; }
+  .customer-title { color: rgba(246,243,236,0.6); font-size: 13px; }
+  .customer-issued { color: rgba(246,243,236,0.45); font-size: 12px; }
+
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .badge-expired { background: rgba(177,69,69,0.25); color: #E68A8A; }
+
+  .customer-meta { color: rgba(246,243,236,0.55); font-size: 12.5px; margin-top: 4px; }
+
+  .empty-state { text-align: center; color: rgba(246,243,236,0.55); font-size: 14px; padding: 24px 0; }
+</style>
 </head>
 <body>
 
-<header>
-  <div class="wrap">
-    <h1>NETAX 관리자 대시보드</h1>
-  </div>
-</header>
+<!-- ===================== 로그인 화면 (기존 보고서관리 인증방식) ===================== -->
+<div id="loginScreen">
+  <div class="card">
+    <h1>관리자 대시보드</h1>
 
-<div id="auth-screen" class="auth-screen active">
-  <div class="auth-box">
-    <h2>관리자 인증</h2>
-    <input type="password" id="admin-password" placeholder="비밀번호 입력" onkeypress="if(event.key==='Enter') authenticateAdmin()">
-    <button onclick="authenticateAdmin()">인증</button>
+    <form id="adminForm">
+      <div class="field-row">
+        <input type="text" id="adminCode" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" autocomplete="off" required>
+        <button type="submit" id="submitBtn">확인</button>
+      </div>
+    </form>
+
+    <div id="message" class="message"></div>
   </div>
 </div>
 
-<div id="dashboard" style="display: none;">
-  <div class="wrap">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab(0)">상담신청 관리</button>
-      <button class="tab-btn" onclick="switchTab(1)">통계</button>
-    </div>
+<!-- ===================== 로그인 후 대시보드 ===================== -->
+<div id="dashboard">
 
-    <div id="tab0" class="tab-content active">
-      <h3>상담신청 대기</h3>
-      <table id="pending-table">
-        <thead>
-          <tr>
-            <th>신청자</th>
-            <th>전화</th>
-            <th>유형</th>
-            <th>신청일</th>
-            <th>상황</th>
-            <th>액션</th>
-          </tr>
-        </thead>
-        <tbody id="pending-tbody">
-          <tr><td colspan="6" class="loading">로딩 중...</td></tr>
-        </tbody>
-      </table>
-
-      <h3 style="margin-top: 40px;">상담신청 완료</h3>
-      <table id="approved-table">
-        <thead>
-          <tr>
-            <th>신청자</th>
-            <th>전화</th>
-            <th>신청일</th>
-            <th>확정일</th>
-            <th>예약일</th>
-          </tr>
-        </thead>
-        <tbody id="approved-tbody">
-          <tr><td colspan="5" class="loading">로딩 중...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div id="tab1" class="tab-content">
-      <h3>상담신청 통계</h3>
-      <p id="stats-info" style="margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 4px;"></p>
+  <div class="topbar">
+    <div class="wrap">
+      <h1>NETAX 관리자 대시보드</h1>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
     </div>
   </div>
+
+  <div class="wrap">
+    <div class="main-menu">
+      <button class="menu-btn active" onclick="switchMenu(0)">예약관리</button>
+      <button class="menu-btn" onclick="switchMenu(1)">보고서관리</button>
+    </div>
+
+    <!-- ===================== 메뉴 0: 예약관리 ===================== -->
+    <div id="menu0" class="menu-content active">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(0)">상담신청 관리</button>
+        <button class="tab-btn" onclick="switchTab(1)">통계</button>
+      </div>
+
+      <div id="tab0" class="tab-content active">
+        <h3>상담신청 대기</h3>
+        <table id="pending-table">
+          <thead>
+            <tr>
+              <th>신청자</th>
+              <th>전화</th>
+              <th>유형</th>
+              <th>신청일</th>
+              <th>상황</th>
+              <th>액션</th>
+            </tr>
+          </thead>
+          <tbody id="pending-tbody">
+            <tr><td colspan="6" class="loading">로딩 중...</td></tr>
+          </tbody>
+        </table>
+
+        <h3>상담신청 완료</h3>
+        <table id="approved-table">
+          <thead>
+            <tr>
+              <th>신청자</th>
+              <th>전화</th>
+              <th>신청일</th>
+              <th>확정일</th>
+              <th>예약일</th>
+            </tr>
+          </thead>
+          <tbody id="approved-tbody">
+            <tr><td colspan="5" class="loading">로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab1" class="tab-content">
+        <h3>상담신청 통계</h3>
+        <div id="stats-info" class="stats-box"></div>
+      </div>
+    </div>
+
+    <!-- ===================== 메뉴 1: 보고서관리 ===================== -->
+    <div id="menu1" class="menu-content">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="고객명 검색">
+      </div>
+      <div class="customer-list" id="customerList"></div>
+    </div>
+  </div>
+
 </div>
 
 <div id="toast-msg" class="toast" style="display: none;"></div>
 
 <script>
-const ADMIN_PASSWORD = 'netax2024';
-const SHEETS_ID = '1HMMKMd0bp7kjK7Z8oSMJy2TSXFKB0EUC1XCIjSsfrmQ';
-const API_URL = 'https://script.google.com/macros/s/AKfycbxJNuDRHaElDL5lVcUFzd5fxAagH4Ql7Jtpcnhhc3_tvh8qfOD3LLcI660DkFIbrwoW4A/exec';
+/* =========================================================
+   공통: 인증 (기존 보고서관리 방식 — 최상위 1회)
+   ========================================================= */
+const REPORT_API_URL = 'https://script.google.com/macros/s/AKfycbyg0gDbzPPkpZs2Gnsuw7Qh_qszYy1_8f2Q-SN7Ffreoc3GfHzIZ7B5UXNidT5ale_b/exec';
+const BOOKING_API_URL = 'https://script.google.com/macros/s/AKfycbxJNuDRHaElDL5lVcUFzd5fxAagH4Ql7Jtpcnhhc3_tvh8qfOD3LLcI660DkFIbrwoW4A/exec';
 
+const adminForm = document.getElementById('adminForm');
+const submitBtn = document.getElementById('submitBtn');
+const messageEl = document.getElementById('message');
+
+let allCustomers = [];
 let allBookingData = [];
+let currentAdminCode = '';
 
-function authenticateAdmin() {
-  const password = document.getElementById('admin-password').value;
-  if (password === ADMIN_PASSWORD) {
-    document.getElementById('auth-screen').classList.remove('active');
+adminForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('adminCode').value;
+  submitBtn.disabled = true;
+  messageEl.textContent = '';
+  messageEl.className = 'message';
+
+  try {
+    const res = await fetch(REPORT_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'admin_list', admin_code: password })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      messageEl.textContent = data.message || '비밀번호가 틀렸습니다.';
+      messageEl.className = 'message error';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    currentAdminCode = password;
+    allCustomers = data.customers || [];
+
+    document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
+
+    renderCustomers(allCustomers);
     loadConsultingData();
-  } else {
-    alert('비밀번호가 틀렸습니다.');
+
+  } catch (err) {
+    console.error(err);
+    messageEl.textContent = '서버 연결에 실패했습니다.';
+    messageEl.className = 'message error';
+    submitBtn.disabled = false;
   }
+});
+
+function logout() {
+  currentAdminCode = '';
+  allCustomers = [];
+  allBookingData = [];
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminCode').value = '';
+  submitBtn.disabled = false;
 }
 
+/* =========================================================
+   상단 메인 메뉴 전환
+   ========================================================= */
+function switchMenu(index) {
+  document.querySelectorAll('.menu-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(`menu${index}`).classList.add('active');
+  document.querySelectorAll('.menu-btn')[index].classList.add('active');
+}
+
+/* =========================================================
+   메뉴0: 예약관리
+   ========================================================= */
 function switchTab(index) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#menu0 .tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#menu0 .tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(`tab${index}`).classList.add('active');
-  document.querySelectorAll('.tab-btn')[index].classList.add('active');
-  
-  if (index === 1) {
-    updateStats();
-  }
+  document.querySelectorAll('#menu0 .tab-btn')[index].classList.add('active');
+
+  if (index === 1) updateStats();
 }
 
 function loadConsultingData() {
-  fetch(API_URL + '?action=getBookings')
+  fetch(BOOKING_API_URL + '?action=getBookings')
     .then(response => response.json())
     .then(data => {
       allBookingData = data.bookings || [];
@@ -149,7 +389,7 @@ function loadConsultingData() {
     })
     .catch(error => {
       console.error('로딩 오류:', error);
-      showToast('데이터 로드 실패');
+      showToast('예약 데이터 로드 실패');
     });
 }
 
@@ -161,7 +401,7 @@ function renderTables() {
     .map((b, idx) => ({ ...b, originalIndex: idx }))
     .filter(b => b.status === '확정');
 
-  const pendingHtml = pending.length > 0 
+  const pendingHtml = pending.length > 0
     ? pending.map((b) => `
       <tr>
         <td>${b.name || '-'}</td>
@@ -175,7 +415,7 @@ function renderTables() {
         </td>
       </tr>
     `).join('')
-    : '<tr><td colspan="6" style="text-align: center; color: #999;">신청 대기 항목이 없습니다.</td></tr>';
+    : '<tr><td colspan="6" class="empty-row">신청 대기 항목이 없습니다.</td></tr>';
 
   document.getElementById('pending-tbody').innerHTML = pendingHtml;
 
@@ -189,7 +429,7 @@ function renderTables() {
         <td>${b.reservedDate || '예약 대기'}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="5" style="text-align: center; color: #999;">완료된 항목이 없습니다.</td></tr>';
+    : '<tr><td colspan="5" class="empty-row">완료된 항목이 없습니다.</td></tr>';
 
   document.getElementById('approved-tbody').innerHTML = approvedHtml;
 }
@@ -200,12 +440,7 @@ function approveBooking(index) {
   const booking = allBookingData[index];
   const sheetRow = index + 2;
 
-  console.log('Booking data:', booking);
-  console.log('Phone:', booking.phone);
-  console.log('ReservedDate:', booking.reservedDate);
-  console.log('ReservedTime:', booking.reservedTime);
-
-  fetch(API_URL, {
+  fetch(BOOKING_API_URL, {
     method: 'POST',
     body: JSON.stringify({
       action: 'approve',
@@ -237,7 +472,7 @@ function rejectBooking(index) {
   const sheetRow = index + 2;
   const booking = allBookingData[index];
 
-  fetch(API_URL, {
+  fetch(BOOKING_API_URL, {
     method: 'POST',
     body: JSON.stringify({
       action: 'reject',
@@ -266,8 +501,8 @@ function updateStats() {
   const approved = allBookingData.filter(b => b.status === '확정').length;
 
   document.getElementById('stats-info').innerHTML = `
-    <strong>전체 신청:</strong> ${total}건 | 
-    <strong>대기 중:</strong> ${pending}건 | 
+    <strong>전체 신청:</strong> ${total}건 &nbsp;|&nbsp;
+    <strong>대기 중:</strong> ${pending}건 &nbsp;|&nbsp;
     <strong>확정 완료:</strong> ${approved}건
   `;
 }
@@ -284,12 +519,65 @@ function showToast(msg) {
   const toast = document.getElementById('toast-msg');
   toast.textContent = msg;
   toast.style.display = 'block';
-  setTimeout(() => {
-    toast.style.display = 'none';
-  }, 3000);
+  setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-loadConsultingData();
+/* =========================================================
+   메뉴1: 보고서관리 (기존 화면 그대로)
+   ========================================================= */
+function renderCustomers(list) {
+  const customerListEl = document.getElementById('customerList');
+  if (list.length === 0) {
+    customerListEl.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+    return;
+  }
+  customerListEl.innerHTML = list.map(c => {
+    const url = `https://rpt.netax.kr/?report_id=${encodeURIComponent(c.report_id)}&admin=${encodeURIComponent(currentAdminCode)}`;
+    const badge = c.is_expired ? '<span class="badge badge-expired">기간만료</span>' : '';
+
+    const topParts = [`<span class="customer-name">${escapeHtml(c.name)}</span>`];
+    if (c.title) topParts.push(`<span class="customer-title">${escapeHtml(c.title)}</span>`);
+    if (c.issued) topParts.push(`<span class="customer-issued">${formatReportDate(c.issued)}</span>`);
+
+    const metaParts = [];
+    if (c.first_access) metaParts.push('최초 ' + formatReportDate(c.first_access));
+    if (c.access_count > 0) metaParts.push(c.access_count + '회');
+    if (c.last_access) metaParts.push('최종 ' + formatReportDate(c.last_access));
+
+    return `<a class="customer-item" href="${url}" target="_blank" rel="noopener">
+      <div class="customer-name-row">
+        ${topParts.join('')}
+        ${badge}
+      </div>
+      <div class="customer-meta">${escapeHtml(metaParts.join(' · '))}</div>
+    </a>`;
+  }).join('');
+}
+
+function formatReportDate(value) {
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  const keyword = e.target.value.trim().toLowerCase();
+  const filtered = allCustomers.filter(c => (c.name || '').toLowerCase().includes(keyword));
+  renderCustomers(filtered);
+});
 </script>
 
 </body>
