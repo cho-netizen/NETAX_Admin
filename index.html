@@ -52,7 +52,6 @@
   </div>
 </header>
 
-<!-- 비밀번호 인증 -->
 <div id="auth-screen" class="auth-screen active">
   <div class="auth-box">
     <h2>관리자 인증</h2>
@@ -61,7 +60,6 @@
   </div>
 </div>
 
-<!-- 대시보드 (인증 후) -->
 <div id="dashboard" style="display: none;">
   <div class="wrap">
     <div class="tabs">
@@ -69,7 +67,6 @@
       <button class="tab-btn" onclick="switchTab(1)">통계</button>
     </div>
 
-    <!-- 상담신청 관리 -->
     <div id="tab0" class="tab-content active">
       <h3>상담신청 대기</h3>
       <table id="pending-table">
@@ -105,7 +102,6 @@
       </table>
     </div>
 
-    <!-- 통계 -->
     <div id="tab1" class="tab-content">
       <h3>상담신청 통계</h3>
       <p id="stats-info" style="margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 4px;"></p>
@@ -203,6 +199,11 @@ function approveBooking(index) {
 
   const booking = allBookingData[index];
   const sheetRow = index + 2;
+
+  console.log('Booking data:', booking);
+  console.log('Phone:', booking.phone);
+  console.log('ReservedDate:', booking.reservedDate);
+  console.log('ReservedTime:', booking.reservedTime);
 
   fetch(API_URL, {
     method: 'POST',
