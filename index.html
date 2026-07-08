@@ -124,9 +124,17 @@
     position: sticky; top: 0; z-index: 50;
   }
   .topbar .wrap { display: flex; align-items: center; justify-content: space-between; }
-  .topbar h1 { margin: 0; text-align: left; font-size: 19px; }
-  .logout-btn { background: transparent; border: 1px solid rgba(246,243,236,0.3); color: rgba(246,243,236,0.75); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 3px; }
+  .topbar h1 { margin: 0; text-align: left; font-size: 19px; white-space: nowrap; }
+  .logout-btn { background: transparent; border: 1px solid rgba(246,243,236,0.3); color: rgba(246,243,236,0.75); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 3px; white-space: nowrap; }
   .logout-btn:hover { background: rgba(255,255,255,0.06); color: var(--cream); }
+
+  @media (max-width: 480px) {
+    .topbar { padding: 12px 0; }
+    .topbar h1 { font-size: 15px; }
+    .logout-btn { font-size: 11px; padding: 6px 10px; }
+    .main-menu button { padding: 12px 8px; font-size: 13.5px; }
+    .menu-content { padding: 16px; }
+  }
 
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
@@ -154,10 +162,18 @@
 
   h3 { font-family: 'Nanum Myeongjo', serif; color: var(--cream); font-size: 16px; font-weight: 700; text-align: left; margin: 0 0 4px; }
 
-  table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; }
-  table th { background: rgba(255,255,255,0.06); color: var(--gold-light); padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.15); }
-  table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: var(--cream); }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 16px 0 32px; border-radius: 4px; }
+  .table-scroll table { margin: 0; }
+
+  table { width: 100%; min-width: 620px; border-collapse: collapse; }
+  table th { background: rgba(255,255,255,0.06); color: var(--gold-light); padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.15); white-space: nowrap; }
+  table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: var(--cream); white-space: nowrap; }
   table tr:hover td { background: rgba(255,255,255,0.03); }
+
+  @media (max-width: 480px) {
+    table { min-width: 560px; }
+    table th, table td { padding: 10px; font-size: 13px; }
+  }
 
   button.approve { background: var(--ok); color: #06210c; padding: 6px 12px; font-size: 12px; margin-right: 4px; }
   button.approve:hover { background: #6fc57e; }
@@ -243,7 +259,7 @@
 
   <div class="topbar">
     <div class="wrap">
-      <h1>NETAX 관리자 대시보드</h1>
+      <h1>NETAX Admin</h1>
       <button class="logout-btn" onclick="logout()">로그아웃</button>
     </div>
   </div>
@@ -263,37 +279,41 @@
 
       <div id="tab0" class="tab-content active">
         <h3>상담신청 대기</h3>
-        <table id="pending-table">
-          <thead>
-            <tr>
-              <th>신청자</th>
-              <th>전화</th>
-              <th>유형</th>
-              <th>신청일</th>
-              <th>상황</th>
-              <th>액션</th>
-            </tr>
-          </thead>
-          <tbody id="pending-tbody">
-            <tr><td colspan="6" class="loading">로딩 중...</td></tr>
-          </tbody>
-        </table>
+        <div class="table-scroll">
+          <table id="pending-table">
+            <thead>
+              <tr>
+                <th>신청자</th>
+                <th>전화</th>
+                <th>유형</th>
+                <th>신청일</th>
+                <th>상황</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody id="pending-tbody">
+              <tr><td colspan="6" class="loading">로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
 
         <h3>상담신청 완료</h3>
-        <table id="approved-table">
-          <thead>
-            <tr>
-              <th>신청자</th>
-              <th>전화</th>
-              <th>신청일</th>
-              <th>확정일</th>
-              <th>예약일</th>
-            </tr>
-          </thead>
-          <tbody id="approved-tbody">
-            <tr><td colspan="5" class="loading">로딩 중...</td></tr>
-          </tbody>
-        </table>
+        <div class="table-scroll">
+          <table id="approved-table">
+            <thead>
+              <tr>
+                <th>신청자</th>
+                <th>전화</th>
+                <th>신청일</th>
+                <th>확정일</th>
+                <th>예약일</th>
+              </tr>
+            </thead>
+            <tbody id="approved-tbody">
+              <tr><td colspan="5" class="loading">로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div id="tab1" class="tab-content">
