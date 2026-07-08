@@ -194,6 +194,36 @@
 
   /* 보고서관리 (기존 화면 그대로) */
   .search-box { margin-bottom: 16px; }
+
+  .new-report-toggle {
+    background: transparent; border: 1px solid rgba(200,162,68,0.5); color: var(--gold-light);
+    padding: 10px 16px; font-size: 13px; font-weight: 700; border-radius: 4px; margin-bottom: 16px; cursor: pointer;
+  }
+  .new-report-toggle:hover { background: rgba(200,162,68,0.12); }
+  .new-report-form {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(176,141,87,0.25); border-radius: 6px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  .new-report-form label { display: block; font-size: 12.5px; font-weight: 700; color: var(--cream); margin-bottom: 6px; }
+  .new-report-form input[type="text"], .new-report-form select {
+    background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.28); border-radius: 3px;
+    color: var(--cream); font-size: 14px; font-family: 'Noto Sans KR', sans-serif; text-align: left;
+    padding: 10px 12px; width: 100%; margin-bottom: 14px;
+  }
+  .new-report-form select { cursor: pointer; }
+  .new-report-form select option { background: var(--navy); color: var(--cream); }
+  .new-report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .new-report-msg { font-size: 13px; color: #FFE5B4; margin-bottom: 12px; min-height: 18px; }
+  .new-report-submit {
+    background: var(--gold); color: var(--navy-deep); border: none; padding: 11px 20px;
+    font-size: 14px; font-weight: 700; border-radius: 3px; cursor: pointer;
+  }
+  .new-report-submit:hover:not(:disabled) { background: var(--gold-light); }
+  .new-report-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (max-width: 480px) {
+    .new-report-grid { grid-template-columns: 1fr; }
+  }
   .customer-list { max-height: none; }
 
   .customer-item {
@@ -215,6 +245,14 @@
 
   .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
   .badge-expired { background: rgba(177,69,69,0.25); color: #E68A8A; }
+
+  .report-id-chip {
+    font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--gold-light); background: rgba(200,162,68,0.12); border: 1px solid rgba(200,162,68,0.4);
+    padding: 3px 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; transition: .15s;
+  }
+  .report-id-chip:hover { background: rgba(200,162,68,0.22); }
+  .report-id-chip.copied { background: var(--ok); border-color: var(--ok); color: #06210c; }
 
   .customer-meta { color: rgba(246,243,236,0.55); font-size: 12.5px; margin-top: 4px; }
 
@@ -329,6 +367,36 @@
 
     <!-- ===================== 메뉴 1: 보고서관리 ===================== -->
     <div id="menu1" class="menu-content">
+      <button type="button" class="new-report-toggle" id="newReportToggle" onclick="toggleNewReportForm()">+ 신규 보고서 등록</button>
+
+      <div class="new-report-form" id="newReportForm" style="display:none;">
+        <div class="new-report-grid">
+          <div>
+            <label for="nr-name">고객명 *</label>
+            <input type="text" id="nr-name" placeholder="홍길동">
+          </div>
+          <div>
+            <label for="nr-title">명칭</label>
+            <input type="text" id="nr-title" placeholder="예: 양도소득세 검토보고서">
+          </div>
+          <div>
+            <label for="nr-type">유형</label>
+            <input type="text" id="nr-type" placeholder="예: 세무자문">
+          </div>
+          <div>
+            <label for="nr-permission">권한</label>
+            <select id="nr-permission">
+              <option value="허용">허용 (다운로드 가능)</option>
+              <option value="차단">차단 (다운로드 불가)</option>
+            </select>
+          </div>
+        </div>
+        <label for="nr-link">자료링크 (Google Drive 공유 링크) *</label>
+        <input type="text" id="nr-link" placeholder="https://drive.google.com/file/d/...">
+        <div class="new-report-msg" id="nrMsg"></div>
+        <button type="button" class="new-report-submit" id="nrSubmit" onclick="submitNewReport()">등록</button>
+      </div>
+
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="고객명 검색">
       </div>
@@ -603,10 +671,110 @@ function renderCustomers(list) {
       <div class="customer-name-row">
         ${topParts.join('')}
         ${badge}
+        <button type="button" class="report-id-chip" title="열람번호 복사" onclick="event.stopPropagation(); event.preventDefault(); copyReportId('${escapeHtml(c.report_id)}', this)">${escapeHtml(c.report_id)} 복사</button>
       </div>
       <div class="customer-meta">${escapeHtml(metaParts.join(' · '))}</div>
     </a>`;
   }).join('');
+}
+
+function copyReportId(reportId, btn) {
+  const original = btn.textContent;
+  const done = () => {
+    btn.textContent = '복사됨!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.classList.remove('copied');
+    }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(reportId).then(done).catch(() => {
+      alert('복사에 실패했습니다. 열람번호: ' + reportId);
+    });
+  } else {
+    alert('열람번호: ' + reportId);
+  }
+}
+
+/* =========================================================
+   신규 보고서 등록
+   ========================================================= */
+function toggleNewReportForm() {
+  const form = document.getElementById('newReportForm');
+  const hidden = form.style.display === 'none' || !form.style.display;
+  form.style.display = hidden ? 'block' : 'none';
+}
+
+function submitNewReport() {
+  const name = document.getElementById('nr-name').value.trim();
+  const title = document.getElementById('nr-title').value.trim();
+  const type = document.getElementById('nr-type').value.trim();
+  const link = document.getElementById('nr-link').value.trim();
+  const permission = document.getElementById('nr-permission').value;
+  const msgEl = document.getElementById('nrMsg');
+  const submitBtn = document.getElementById('nrSubmit');
+
+  if (!name) {
+    msgEl.style.color = '#FFE5B4';
+    msgEl.textContent = '고객명을 입력해 주세요.';
+    return;
+  }
+  if (!link) {
+    msgEl.style.color = '#FFE5B4';
+    msgEl.textContent = '자료링크를 입력해 주세요.';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  msgEl.style.color = '#FFE5B4';
+  msgEl.textContent = '등록하는 중...';
+
+  fetch(REPORT_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'create_report',
+      admin_code: currentAdminCode,
+      name, title, type, link, permission
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      submitBtn.disabled = false;
+      if (data.success) {
+        msgEl.style.color = '#7FFF7F';
+        msgEl.textContent = `등록 완료! 열람번호: ${data.report_id} (${data.name})`;
+        document.getElementById('nr-name').value = '';
+        document.getElementById('nr-title').value = '';
+        document.getElementById('nr-type').value = '';
+        document.getElementById('nr-link').value = '';
+        document.getElementById('nr-permission').value = '허용';
+        reloadCustomerList();
+      } else {
+        msgEl.style.color = '#FFB4B4';
+        msgEl.textContent = data.message || '등록에 실패했습니다.';
+      }
+    })
+    .catch(() => {
+      submitBtn.disabled = false;
+      msgEl.style.color = '#FFB4B4';
+      msgEl.textContent = '네트워크 오류가 발생했습니다.';
+    });
+}
+
+function reloadCustomerList() {
+  fetch(REPORT_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'admin_list', admin_code: currentAdminCode })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        allCustomers = data.customers || [];
+        renderCustomers(allCustomers);
+      }
+    })
+    .catch(() => {});
 }
 
 function formatReportDate(value) {
