@@ -198,6 +198,26 @@
   .customer-meta { color: rgba(246,243,236,0.55); font-size: 12.5px; margin-top: 4px; }
 
   .empty-state { text-align: center; color: rgba(246,243,236,0.55); font-size: 14px; padding: 24px 0; }
+
+  /* ---------- 보고서 열람 모달 ---------- */
+  .report-modal { display: none; position: fixed; inset: 0; z-index: 200; background: var(--navy-deep); flex-direction: column; }
+  .report-modal.active { display: flex; }
+  .report-modal-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 16px; background: var(--navy); border-bottom: 1px solid rgba(176,141,87,0.25);
+  }
+  .modal-back-btn {
+    background: transparent; border: 1px solid rgba(246,243,236,0.3); color: var(--cream);
+    padding: 8px 14px; font-size: 13px; font-weight: 700; border-radius: 3px; white-space: nowrap;
+  }
+  .modal-back-btn:hover { background: rgba(255,255,255,0.08); }
+  .report-modal-title { color: var(--cream); font-size: 14px; font-weight: 600; flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .modal-newtab-btn {
+    color: var(--gold-light); font-size: 12.5px; text-decoration: none;
+    border: 1px solid rgba(176,141,87,0.3); padding: 8px 12px; border-radius: 3px; white-space: nowrap;
+  }
+  .modal-newtab-btn:hover { background: rgba(255,255,255,0.06); }
+  .report-modal-frame { flex: 1; width: 100%; border: none; background: #fff; }
 </style>
 </head>
 <body>
@@ -291,6 +311,16 @@
     </div>
   </div>
 
+</div>
+
+<!-- ===================== 보고서 열람 모달 ===================== -->
+<div id="reportModal" class="report-modal">
+  <div class="report-modal-bar">
+    <button class="modal-back-btn" onclick="closeReportModal()">← 목록으로</button>
+    <span id="reportModalTitle" class="report-modal-title"></span>
+    <a id="reportModalNewTab" class="modal-newtab-btn" href="#" target="_blank" rel="noopener">새 탭에서 열기 ↗</a>
+  </div>
+  <iframe id="reportModalFrame" class="report-modal-frame" src="about:blank" title="보고서 열람"></iframe>
 </div>
 
 <div id="toast-msg" class="toast" style="display: none;"></div>
@@ -544,7 +574,7 @@ function renderCustomers(list) {
     if (c.access_count > 0) metaParts.push(c.access_count + '회');
     if (c.last_access) metaParts.push('최종 ' + formatReportDate(c.last_access));
 
-    return `<a class="customer-item" href="${url}" target="_blank" rel="noopener">
+    return `<a class="customer-item" href="${url}" onclick="return openReportModal(event, '${url}', '${escapeHtml(c.name)} 보고서')">
       <div class="customer-name-row">
         ${topParts.join('')}
         ${badge}
@@ -577,6 +607,48 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   const keyword = e.target.value.trim().toLowerCase();
   const filtered = allCustomers.filter(c => (c.name || '').toLowerCase().includes(keyword));
   renderCustomers(filtered);
+});
+
+/* =========================================================
+   보고서 열람 모달 (뒤로가기로 목록 복귀)
+   ========================================================= */
+let reportModalOpen = false;
+
+function openReportModal(e, url, title) {
+  // Ctrl/Cmd/중간클릭 등은 브라우저 기본 동작(새 탭 열기)을 그대로 허용
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return true;
+  e.preventDefault();
+
+  document.getElementById('reportModalTitle').textContent = title;
+  document.getElementById('reportModalNewTab').href = url;
+  document.getElementById('reportModalFrame').src = url;
+  document.getElementById('reportModal').classList.add('active');
+
+  if (!reportModalOpen) {
+    history.pushState({ reportModal: true }, '');
+    reportModalOpen = true;
+  }
+  return false;
+}
+
+function closeReportModal() {
+  if (reportModalOpen) {
+    history.back(); // popstate 핸들러에서 실제 닫기 처리
+  } else {
+    closeReportModalInternal();
+  }
+}
+
+function closeReportModalInternal() {
+  document.getElementById('reportModal').classList.remove('active');
+  document.getElementById('reportModalFrame').src = 'about:blank';
+}
+
+window.addEventListener('popstate', () => {
+  if (reportModalOpen) {
+    reportModalOpen = false;
+    closeReportModalInternal();
+  }
 });
 </script>
 
