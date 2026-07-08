@@ -134,6 +134,8 @@
     .logout-btn { font-size: 11px; padding: 6px 10px; }
     .main-menu button { padding: 12px 8px; font-size: 13.5px; }
     .menu-content { padding: 16px; }
+    .tabs { gap: 4px; }
+    .tabs button { padding: 10px 12px; font-size: 12.5px; }
   }
 
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
@@ -154,7 +156,7 @@
 
   /* 예약관리 서브탭 */
   .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 24px; }
-  .tabs button { background: none; border: none; border-radius: 0; padding: 12px 20px; font-size: 14px; font-weight: 600; color: rgba(246,243,236,0.5); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs button { background: none; border: none; border-radius: 0; padding: 12px 20px; font-size: 14px; font-weight: 600; color: rgba(246,243,236,0.5); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
   .tabs button.active { color: var(--gold-light); border-bottom-color: var(--gold); background: none; }
 
   .tab-content { display: none; }
@@ -182,8 +184,11 @@
 
   .loading, .empty-row { text-align: center; padding: 32px; color: rgba(246,243,236,0.45); }
 
-  .stats-box { margin: 16px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 4px; color: var(--cream); font-size: 14px; line-height: 1.8; }
-  .stats-box strong { color: var(--gold-light); }
+  .stats-box { margin: 16px 0; padding: 8px 20px; background: rgba(255,255,255,0.05); border-radius: 4px; color: var(--cream); font-size: 14px; }
+  .stat-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: rgba(246,243,236,0.6); }
+  .stat-value { color: var(--gold-light); font-weight: 700; font-size: 16px; }
 
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); border: 1px solid var(--gold); color: var(--cream); padding: 16px 24px; border-radius: 4px; z-index: 1000; }
 
@@ -267,7 +272,7 @@
   <div class="wrap">
     <div class="main-menu">
       <button class="menu-btn active" onclick="switchMenu(0)">예약관리</button>
-      <button class="menu-btn" onclick="switchMenu(1)">보고서관리</button>
+      <button class="menu-btn" onclick="switchMenu(1)">보고관리</button>
     </div>
 
     <!-- ===================== 메뉴 0: 예약관리 ===================== -->
@@ -551,9 +556,9 @@ function updateStats() {
   const approved = allBookingData.filter(b => b.status === '확정').length;
 
   document.getElementById('stats-info').innerHTML = `
-    <strong>전체 신청:</strong> ${total}건 &nbsp;|&nbsp;
-    <strong>대기 중:</strong> ${pending}건 &nbsp;|&nbsp;
-    <strong>확정 완료:</strong> ${approved}건
+    <div class="stat-row"><span class="stat-label">전체 신청</span><span class="stat-value">${total}건</span></div>
+    <div class="stat-row"><span class="stat-label">대기 중</span><span class="stat-value">${pending}건</span></div>
+    <div class="stat-row"><span class="stat-label">확정 완료</span><span class="stat-value">${approved}건</span></div>
   `;
 }
 
