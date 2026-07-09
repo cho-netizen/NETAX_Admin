@@ -791,9 +791,13 @@ function submitNewReport() {
 }
 
 function reloadCustomerList() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
   return fetch(REPORT_API_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'admin_list', admin_code: currentAdminCode })
+    body: JSON.stringify({ action: 'admin_list', admin_code: currentAdminCode }),
+    signal: controller.signal
   })
     .then(res => res.json())
     .then(data => {
@@ -807,7 +811,8 @@ function reloadCustomerList() {
       }
       return data;
     })
-    .catch(() => ({ success: false }));
+    .catch(err => ({ success: false, timedOut: err && err.name === 'AbortError' }))
+    .finally(() => clearTimeout(timeoutId));
 }
 
 function manualRefreshList() {
@@ -817,7 +822,9 @@ function manualRefreshList() {
   btn.classList.add('spinning');
   reloadCustomerList()
     .then(data => {
-      if (!data || !data.success) showToast('새로고침에 실패했습니다.');
+      if (!data || !data.success) {
+        showToast(data && data.timedOut ? '응답이 없습니다. 잠시 후 다시 시도해주세요.' : '새로고침에 실패했습니다.');
+      }
     })
     .finally(() => {
       btn.disabled = false;
