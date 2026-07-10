@@ -296,6 +296,13 @@
     border: 1px solid rgba(176,141,87,0.3); padding: 8px 12px; border-radius: 3px; white-space: nowrap;
   }
   .modal-newtab-btn:hover { background: rgba(255,255,255,0.06); }
+  .modal-refresh-btn {
+    background: transparent; border: 1px solid rgba(176,141,87,0.3); color: var(--gold-light);
+    padding: 8px 10px; font-size: 13px; border-radius: 3px; display: flex; align-items: center; cursor: pointer;
+  }
+  .modal-refresh-btn:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
+  .modal-refresh-btn:disabled { opacity: 0.5; cursor: default; }
+  .modal-refresh-btn.spinning svg { animation: rb-spin 0.7s linear infinite; }
   .report-modal-frame { flex: 1; width: 100%; border: none; background: #fff; }
 </style>
 </head>
@@ -434,6 +441,9 @@
   <div class="report-modal-bar">
     <button class="modal-back-btn" onclick="closeReportModal()">← 목록으로</button>
     <span id="reportModalTitle" class="report-modal-title"></span>
+    <button type="button" class="modal-refresh-btn" id="reportRefreshBtn" title="보고서 새로고침" onclick="refreshReportModal()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+    </button>
     <a id="reportModalNewTab" class="modal-newtab-btn" href="#" target="_blank" rel="noopener">새 탭에서 열기 ↗</a>
   </div>
   <iframe id="reportModalFrame" class="report-modal-frame" src="about:blank" title="보고서 열람"></iframe>
@@ -891,12 +901,14 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
    보고서 열람 모달 (뒤로가기로 목록 복귀)
    ========================================================= */
 let reportModalOpen = false;
+let currentReportUrl = '';
 
 function openReportModal(e, url, title) {
   // Ctrl/Cmd/중간클릭 등은 브라우저 기본 동작(새 탭 열기)을 그대로 허용
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return true;
   e.preventDefault();
 
+  currentReportUrl = url;
   document.getElementById('reportModalTitle').textContent = title;
   document.getElementById('reportModalNewTab').href = url;
   document.getElementById('reportModalFrame').src = url;
@@ -907,6 +919,27 @@ function openReportModal(e, url, title) {
     reportModalOpen = true;
   }
   return false;
+}
+
+function refreshReportModal() {
+  if (!currentReportUrl) return;
+  const btn = document.getElementById('reportRefreshBtn');
+  btn.disabled = true;
+  btn.classList.add('spinning');
+
+  const frame = document.getElementById('reportModalFrame');
+  // 같은 URL이라도 브라우저가 실제로 재요청하도록 캐시버스팅 파라미터를 붙인다.
+  const sep = currentReportUrl.includes('?') ? '&' : '?';
+  frame.src = currentReportUrl + sep + '_r=' + Date.now();
+
+  const stopSpin = () => {
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+    frame.removeEventListener('load', stopSpin);
+  };
+  frame.addEventListener('load', stopSpin);
+  // 혹시 load 이벤트가 안 잡히는 경우(교차 출처 등)를 대비한 안전장치
+  setTimeout(stopSpin, 6000);
 }
 
 function closeReportModal() {
