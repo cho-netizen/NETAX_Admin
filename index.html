@@ -274,6 +274,14 @@
   .pw-reset-chip:disabled { opacity: 0.5; cursor: default; }
   .pw-reset-chip.done { background: var(--ok); border-color: var(--ok); color: #06210c; }
 
+  .delete-chip {
+    font-size: 11px; font-weight: 700; color: #F6F3EC; background: rgba(177,69,69,0.55);
+    border: 1px solid rgba(177,69,69,0.8); padding: 3px 10px; border-radius: 10px; cursor: pointer;
+    white-space: nowrap; transition: .15s;
+  }
+  .delete-chip:hover:not(:disabled) { background: rgba(177,69,69,0.8); }
+  .delete-chip:disabled { opacity: 0.5; cursor: default; }
+
   .customer-meta { color: rgba(246,243,236,0.55); font-size: 12.5px; margin-top: 4px; }
 
   .empty-state { text-align: center; color: rgba(246,243,236,0.55); font-size: 14px; padding: 24px 0; }
@@ -704,12 +712,15 @@ function renderCustomers(list) {
       ? `<button type="button" class="pw-reset-chip" title="비밀번호 초기화" onclick="event.stopPropagation(); event.preventDefault(); clearPassword('${escapeHtml(c.report_id)}', '${escapeHtml(c.name)}', this)">🔓 비번초기화</button>`
       : '';
 
+    const deleteBtn = `<button type="button" class="delete-chip" title="보고서 삭제" onclick="event.stopPropagation(); event.preventDefault(); deleteReport('${escapeHtml(c.report_id)}', '${escapeHtml(c.name)}', this)">🗑️ 삭제</button>`;
+
     return `<a class="customer-item" href="${url}" onclick="return openReportModal(event, '${url}', '${escapeHtml(c.name)} 보고서')">
       <div class="customer-name-row">
         ${topParts.join('')}
         ${badge}
         <button type="button" class="report-id-chip" title="열람번호 복사" onclick="event.stopPropagation(); event.preventDefault(); copyReportId('${escapeHtml(c.report_id)}', this)">${escapeHtml(c.report_id)} 복사</button>
         ${pwResetBtn}
+        ${deleteBtn}
       </div>
       <div class="customer-meta">${escapeHtml(metaParts.join(' · '))}</div>
     </a>`;
@@ -863,6 +874,43 @@ function clearPassword(reportId, name, btn) {
         btn.disabled = false;
         btn.textContent = original;
         alert(data.message || '초기화에 실패했습니다.');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = original;
+      alert('네트워크 오류가 발생했습니다.');
+    });
+}
+
+function deleteReport(reportId, name, btn) {
+  // 1단계: 기본 확인
+  if (!confirm(`${name}님의 보고서(${reportId})를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+  // 2단계: 실수 클릭 방지를 위해 고객명을 정확히 입력해야 진행 (되돌릴 수 없는 작업이므로)
+  const typed = prompt(`정말 삭제하시려면 고객명을 정확히 입력해주세요.\n(고객명: ${name})`);
+  if (typed === null) return;
+  if (typed.trim() !== name.trim()) {
+    alert('입력하신 이름이 일치하지 않아 삭제가 취소되었습니다.');
+    return;
+  }
+
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '삭제중...';
+
+  fetch(REPORT_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete_report', admin_code: currentAdminCode, report_id: reportId })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        reloadCustomerList();
+      } else {
+        btn.disabled = false;
+        btn.textContent = original;
+        alert(data.message || '삭제에 실패했습니다.');
       }
     })
     .catch(() => {
