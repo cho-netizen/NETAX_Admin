@@ -28,7 +28,6 @@
     min-height: 100vh;
   }
 
-  /* ---------- 로그인 화면 (기존 보고서관리 방식 그대로) ---------- */
   #loginScreen {
     min-height: 100vh;
     display: flex;
@@ -115,7 +114,6 @@
   .message { margin-top: 8px; font-size: 13px; text-align: center; line-height: 1.6; }
   .message.error { color: var(--error); }
 
-  /* ---------- 로그인 후 대시보드 ---------- */
   #dashboard { display: none; }
 
   .topbar {
@@ -155,7 +153,6 @@
   }
   .menu-content.active { display: block; }
 
-  /* 예약관리 서브탭 */
   .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 24px; }
   .tabs button { background: none; border: none; border-radius: 0; padding: 12px 20px; font-size: 14px; font-weight: 600; color: rgba(246,243,236,0.5); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
   .tabs button.active { color: var(--gold-light); border-bottom-color: var(--gold); background: none; }
@@ -193,7 +190,6 @@
 
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); border: 1px solid var(--gold); color: var(--cream); padding: 16px 24px; border-radius: 4px; z-index: 1000; }
 
-  /* 보고서관리 (기존 화면 그대로) */
   .search-box { margin-bottom: 16px; display: flex; gap: 8px; align-items: stretch; }
   .search-box input[type="text"] { flex: 1; }
 
@@ -287,7 +283,6 @@
 
   .empty-state { text-align: center; color: rgba(246,243,236,0.55); font-size: 14px; padding: 24px 0; }
 
-  /* ---------- 보고서 열람 모달 ---------- */
   .report-modal { display: none; position: fixed; inset: 0; z-index: 200; background: var(--navy-deep); flex-direction: column; }
   .report-modal.active { display: flex; }
   .report-modal-bar {
@@ -317,7 +312,6 @@
 </head>
 <body>
 
-<!-- ===================== 로그인 화면 (기존 보고서관리 인증방식) ===================== -->
 <div id="loginScreen">
   <div class="card">
     <h1>관리자 대시보드</h1>
@@ -333,7 +327,6 @@
   </div>
 </div>
 
-<!-- ===================== 로그인 후 대시보드 ===================== -->
 <div id="dashboard">
 
   <div class="topbar">
@@ -347,6 +340,7 @@
     <div class="main-menu">
       <button class="menu-btn active" onclick="switchMenu(0)">예약관리</button>
       <button class="menu-btn" onclick="switchMenu(1)">보고관리</button>
+      <button class="menu-btn" onclick="switchMenu(2)">케이스관리</button>
     </div>
 
     <!-- ===================== 메뉴 0: 예약관리 ===================== -->
@@ -441,6 +435,42 @@
       </div>
       <div class="customer-list" id="customerList"></div>
     </div>
+
+    <!-- ===================== 메뉴 2: 케이스관리(my.netax.kr) ===================== -->
+    <div id="menu2" class="menu-content">
+      <button type="button" class="new-report-toggle" id="newCaseToggle" onclick="toggleNewCaseForm()">+ 신규 케이스 등록</button>
+
+      <div class="new-report-form" id="newCaseForm" style="display:none;">
+        <div class="new-report-grid">
+          <div>
+            <label for="nc-name">고객명 *</label>
+            <input type="text" id="nc-name" placeholder="홍길동">
+          </div>
+          <div>
+            <label for="nc-case">사건명 *</label>
+            <input type="text" id="nc-case" placeholder="예: 양도소득세, 증여, 상속">
+          </div>
+        </div>
+        <label for="nc-checklist">필요서류 체크리스트 (한 줄에 하나씩)</label>
+        <textarea id="nc-checklist" rows="4" placeholder="등기부등본&#10;매매계약서&#10;가족관계증명서"
+          style="width:100%;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.28);border-radius:3px;color:var(--cream);font-size:14px;font-family:'Noto Sans KR',sans-serif;padding:10px 12px;margin-bottom:14px;resize:vertical;"></textarea>
+        <label for="nc-permission">보고서 다운로드 권한</label>
+        <select id="nc-permission">
+          <option value="허용">허용 (다운로드 가능)</option>
+          <option value="차단">차단 (다운로드 불가)</option>
+        </select>
+        <div class="new-report-msg" id="ncMsg"></div>
+        <button type="button" class="new-report-submit" id="ncSubmit" onclick="submitNewCase()">등록</button>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="caseSearchInput" placeholder="고객명 검색">
+        <button type="button" class="refresh-btn" id="refreshCaseListBtn" title="목록 새로고침" onclick="manualRefreshCaseList()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+        </button>
+      </div>
+      <div class="customer-list" id="caseList"></div>
+    </div>
   </div>
 
 </div>
@@ -461,11 +491,9 @@
 <div id="toast-msg" class="toast" style="display: none;"></div>
 
 <script>
-/* =========================================================
-   공통: 인증 (기존 보고서관리 방식 — 최상위 1회)
-   ========================================================= */
 const REPORT_API_URL = 'https://script.google.com/macros/s/AKfycbyg0gDbzPPkpZs2Gnsuw7Qh_qszYy1_8f2Q-SN7Ffreoc3GfHzIZ7B5UXNidT5ale_b/exec';
 const BOOKING_API_URL = 'https://script.google.com/macros/s/AKfycbxJNuDRHaElDL5lVcUFzd5fxAagH4Ql7Jtpcnhhc3_tvh8qfOD3LLcI660DkFIbrwoW4A/exec';
+const MY_API_URL = 'https://script.google.com/macros/s/AKfycbzpyTO4wLZNJhpoiV0Ke3u1KsRW_4x6LppvPWE9hyZbE9UrZzDzQ2gOLndzmeKeHwBLsw/exec';
 
 const adminForm = document.getElementById('adminForm');
 const submitBtn = document.getElementById('submitBtn');
@@ -473,6 +501,7 @@ const messageEl = document.getElementById('message');
 
 let allCustomers = [];
 let allBookingData = [];
+let allCases = [];
 let currentAdminCode = '';
 
 adminForm.addEventListener('submit', async (e) => {
@@ -517,25 +546,22 @@ function logout() {
   currentAdminCode = '';
   allCustomers = [];
   allBookingData = [];
+  allCases = [];
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('adminCode').value = '';
   submitBtn.disabled = false;
 }
 
-/* =========================================================
-   상단 메인 메뉴 전환
-   ========================================================= */
 function switchMenu(index) {
   document.querySelectorAll('.menu-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(`menu${index}`).classList.add('active');
   document.querySelectorAll('.menu-btn')[index].classList.add('active');
+
+  if (index === 2 && allCases.length === 0) reloadCaseList();
 }
 
-/* =========================================================
-   메뉴0: 예약관리
-   ========================================================= */
 function switchTab(index) {
   document.querySelectorAll('#menu0 .tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('#menu0 .tab-btn').forEach(el => el.classList.remove('active'));
@@ -687,9 +713,6 @@ function showToast(msg) {
   setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-/* =========================================================
-   메뉴1: 보고서관리 (기존 화면 그대로)
-   ========================================================= */
 function renderCustomers(list) {
   const customerListEl = document.getElementById('customerList');
   if (list.length === 0) {
@@ -747,9 +770,6 @@ function copyReportId(reportId, btn) {
   }
 }
 
-/* =========================================================
-   신규 보고서 등록
-   ========================================================= */
 function toggleNewReportForm() {
   const form = document.getElementById('newReportForm');
   const hidden = form.style.display === 'none' || !form.style.display;
@@ -885,10 +905,8 @@ function clearPassword(reportId, name, btn) {
 }
 
 function deleteReport(reportId, name, btn) {
-  // 1단계: 기본 확인
   if (!confirm(`${name}님의 보고서(${reportId})를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`)) return;
 
-  // 2단계: 실수 클릭 방지를 위해 고객명을 정확히 입력해야 진행 (되돌릴 수 없는 작업이므로)
   const typed = prompt(`정말 삭제하시려면 고객명을 정확히 입력해주세요.\n(고객명: ${name})`);
   if (typed === null) return;
   if (typed.trim() !== name.trim()) {
@@ -946,14 +964,134 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   renderCustomers(filtered);
 });
 
-/* =========================================================
-   보고서 열람 모달 (뒤로가기로 목록 복귀)
-   ========================================================= */
+function toggleNewCaseForm() {
+  const form = document.getElementById('newCaseForm');
+  const hidden = form.style.display === 'none' || !form.style.display;
+  form.style.display = hidden ? 'block' : 'none';
+}
+
+function submitNewCase() {
+  const name = document.getElementById('nc-name').value.trim();
+  const caseName = document.getElementById('nc-case').value.trim();
+  const checklistRaw = document.getElementById('nc-checklist').value;
+  const permission = document.getElementById('nc-permission').value;
+  const msgEl = document.getElementById('ncMsg');
+  const submitBtn = document.getElementById('ncSubmit');
+
+  if (!name || !caseName) {
+    msgEl.style.color = '#FFE5B4';
+    msgEl.textContent = '고객명과 사건명을 입력해 주세요.';
+    return;
+  }
+
+  const checklist = checklistRaw.split('\n').map(s => s.trim()).filter(Boolean);
+
+  submitBtn.disabled = true;
+  msgEl.style.color = '#FFE5B4';
+  msgEl.textContent = '등록하는 중...';
+
+  fetch(MY_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'admin_create_case',
+      admin_code: currentAdminCode,
+      name, case_name: caseName, checklist, permission
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    submitBtn.disabled = false;
+    if (data.success) {
+      msgEl.style.color = '#7FFF7F';
+      msgEl.textContent = `등록 완료! 열람번호: ${data.report_id}`;
+      document.getElementById('nc-name').value = '';
+      document.getElementById('nc-case').value = '';
+      document.getElementById('nc-checklist').value = '';
+      document.getElementById('nc-permission').value = '허용';
+      reloadCaseList();
+    } else {
+      msgEl.style.color = '#FFB4B4';
+      msgEl.textContent = data.message || '등록에 실패했습니다.';
+    }
+  })
+  .catch(() => {
+    submitBtn.disabled = false;
+    msgEl.style.color = '#FFB4B4';
+    msgEl.textContent = '네트워크 오류가 발생했습니다.';
+  });
+}
+
+function renderCases(list) {
+  const el = document.getElementById('caseList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state">등록된 케이스가 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = list.map(c => `
+    <div class="customer-item" style="cursor:default;">
+      <div class="customer-name-row">
+        <span class="customer-name">${escapeHtml(c.name)}</span>
+        <span class="customer-title">${escapeHtml(c.case_name)}</span>
+        <button type="button" class="report-id-chip" title="열람번호 복사" onclick="copyCaseReportId('${escapeHtml(c.report_id)}', this)">${escapeHtml(c.report_id)} 복사</button>
+        ${c.has_password ? '' : '<span class="badge" style="background:rgba(200,162,68,0.2);color:var(--gold-light);">비밀번호 미설정</span>'}
+      </div>
+      <div class="customer-meta">${escapeHtml(String(c.issued || '').slice(0,10))} 발급</div>
+    </div>
+  `).join('');
+}
+
+function copyCaseReportId(reportId, btn) {
+  const original = btn.textContent;
+  const done = () => {
+    btn.textContent = '복사됨!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(reportId).then(done).catch(() => alert('열람번호: ' + reportId));
+  } else {
+    alert('열람번호: ' + reportId);
+  }
+}
+
+function reloadCaseList() {
+  return fetch(MY_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'admin_list', admin_code: currentAdminCode })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      allCases = data.cases || [];
+      const keyword = (document.getElementById('caseSearchInput').value || '').trim().toLowerCase();
+      const filtered = keyword ? allCases.filter(c => (c.name || '').toLowerCase().includes(keyword)) : allCases;
+      renderCases(filtered);
+    }
+    return data;
+  })
+  .catch(err => ({ success: false }));
+}
+
+function manualRefreshCaseList() {
+  const btn = document.getElementById('refreshCaseListBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  reloadCaseList().finally(() => {
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+  });
+}
+
+document.getElementById('caseSearchInput').addEventListener('input', (e) => {
+  const keyword = e.target.value.trim().toLowerCase();
+  renderCases(allCases.filter(c => (c.name || '').toLowerCase().includes(keyword)));
+});
+
 let reportModalOpen = false;
 let currentReportUrl = '';
 
 function openReportModal(e, url, title) {
-  // Ctrl/Cmd/중간클릭 등은 브라우저 기본 동작(새 탭 열기)을 그대로 허용
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return true;
   e.preventDefault();
 
@@ -977,7 +1115,6 @@ function refreshReportModal() {
   btn.classList.add('spinning');
 
   const frame = document.getElementById('reportModalFrame');
-  // 같은 URL이라도 브라우저가 실제로 재요청하도록 캐시버스팅 파라미터를 붙인다.
   const sep = currentReportUrl.includes('?') ? '&' : '?';
   frame.src = currentReportUrl + sep + '_r=' + Date.now();
 
@@ -987,13 +1124,12 @@ function refreshReportModal() {
     frame.removeEventListener('load', stopSpin);
   };
   frame.addEventListener('load', stopSpin);
-  // 혹시 load 이벤트가 안 잡히는 경우(교차 출처 등)를 대비한 안전장치
   setTimeout(stopSpin, 6000);
 }
 
 function closeReportModal() {
   if (reportModalOpen) {
-    history.back(); // popstate 핸들러에서 실제 닫기 처리
+    history.back();
   } else {
     closeReportModalInternal();
   }
