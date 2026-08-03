@@ -1033,11 +1033,33 @@ function renderCases(list) {
         <span class="customer-name">${escapeHtml(c.name)}</span>
         <span class="customer-title">${escapeHtml(c.case_name)}</span>
         <button type="button" class="report-id-chip" title="열람번호 복사" onclick="copyCaseReportId('${escapeHtml(c.report_id)}', this)">${escapeHtml(c.report_id)} 복사</button>
+        <button type="button" class="pw-reset-chip" style="color:var(--gold-light);background:rgba(200,162,68,0.12);border-color:rgba(200,162,68,0.4);" title="필요서류 항목 추가" onclick="addChecklistItem('${escapeHtml(c.report_id)}', '${escapeHtml(c.name)}')">＋ 항목 추가</button>
         ${c.has_password ? '' : '<span class="badge" style="background:rgba(200,162,68,0.2);color:var(--gold-light);">비밀번호 미설정</span>'}
       </div>
       <div class="customer-meta">${escapeHtml(String(c.issued || '').slice(0,10))} 발급</div>
     </div>
   `).join('');
+}
+
+function addChecklistItem(reportId, name) {
+  const item = prompt(`${name}님에게 추가로 요청할 서류명을 입력해주세요.\n(예: 가족관계증명서)`);
+  if (item === null) return;
+  const trimmed = item.trim();
+  if (!trimmed) return;
+
+  fetch(MY_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'admin_add_checklist_item', admin_code: currentAdminCode, report_id: reportId, item: trimmed })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast(`"${trimmed}" 항목이 추가되었습니다.`);
+    } else {
+      alert(data.message || '추가에 실패했습니다.');
+    }
+  })
+  .catch(() => alert('네트워크 오류가 발생했습니다.'));
 }
 
 function copyCaseReportId(reportId, btn) {
